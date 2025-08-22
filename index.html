@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Company Incorporation Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Styles for better look and feel */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+        .card {
+            background-color: white;
+            border-radius: 1.5rem; /* More rounded corners */
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+        }
+        .card-header {
+            background: linear-gradient(to right, #4f46e5, #3b82f6);
+        }
+        .btn-primary {
+            background: linear-gradient(to right, #4f46e5, #3b82f6);
+            transition: all 0.3s ease;
+            transform: translateY(0);
+        }
+        .btn-primary:hover {
+            box-shadow: 0 10px 20px -5px rgba(79, 70, 229, 0.4);
+            transform: translateY(-3px);
+        }
+        input, select {
+            transition: all 0.2s ease-in-out;
+            border-width: 2px;
+        }
+        input:focus, select:focus {
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+            border-color: #4f46e5;
+        }
+        .step-circle {
+            width: 2.25rem;
+            height: 2.25rem;
+            background-color: #e0e7ff;
+            color: #4338ca;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 9999px;
+            margin-right: 0.75rem;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body class="gradient-bg">
+
+    <div class="min-h-screen flex items-center justify-center p-4">
+        <div class="max-w-6xl w-full mx-auto">
+            <div class="card">
+                <!-- Header -->
+                <header class="card-header p-8 text-center text-white">
+                    <h1 class="text-4xl font-bold mb-2">Company Incorporation Calculator</h1>
+                    <p class="text-indigo-100">Latest SPICeB stamp duty rates • SH-7 excluded • GST @18%</p>
+                </header>
+
+                <main class="p-8 grid lg:grid-cols-2 gap-8">
+                    <!-- Inputs Section -->
+                    <div class="space-y-6">
+                        <h2 class="text-2xl font-semibold text-gray-800 flex items-center">
+                            <span class="step-circle">1</span>
+                            Company Details
+                        </h2>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="state-select" class="block text-sm font-semibold text-gray-700 mb-2">Select State/UT</label>
+                                <select id="state-select" class="w-full p-3 border-gray-200 rounded-xl bg-white"></select>
+                            </div>
+                            <div>
+                                <label for="company-type-select" class="block text-sm font-semibold text-gray-700 mb-2">Company Type</label>
+                                <select id="company-type-select" class="w-full p-3 border-gray-200 rounded-xl bg-white">
+                                    <option value="share_capital">With Share Capital (non-Section 8)</option>
+                                    <option value="no_share_capital">Without Share Capital (non-Section 8)</option>
+                                    <option value="section8">Section 8</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="capital-input" class="block text-sm font-semibold text-gray-700 mb-2">Authorized Share Capital (₹)</label>
+                                <input type="number" id="capital-input" value="1000000" min="0" step="1000" class="w-full p-3 border-gray-200 rounded-xl">
+                            </div>
+                            <div>
+                                <label for="directors-input" class="block text-sm font-semibold text-gray-700 mb-2">Number of Directors</label>
+                                <input type="number" id="directors-input" value="2" min="1" step="1" class="w-full p-3 border-gray-200 rounded-xl">
+                            </div>
+                            <button id="calculate-btn" class="w-full btn-primary text-white py-3 px-8 rounded-xl font-semibold text-lg shadow-lg">
+                                Calculate Fees
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Results Section -->
+                    <div class="bg-gray-50 rounded-xl p-6">
+                        <h2 class="text-2xl font-semibold text-gray-800 mb-6 flex items-center">
+                            <span class="step-circle">2</span>
+                            Fee Breakdown
+                        </h2>
+                        <div id="results-placeholder" class="text-center py-12">
+                            <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <span class="text-2xl">📊</span>
+                            </div>
+                            <p class="text-gray-600">Enter details to see the fee breakdown.</p>
+                        </div>
+                        <div id="results-output" class="hidden space-y-4">
+                            <!-- Summary Info -->
+                            <div class="bg-white rounded-lg p-4 border border-indigo-100">
+                                <div class="grid grid-cols-2 gap-4 text-sm">
+                                    <div><span class="font-medium text-gray-600">State:</span> <strong id="res-state" class="font-semibold text-gray-900"></strong></div>
+                                    <div><span class="font-medium text-gray-600">Capital:</span> <strong id="res-capital" class="font-semibold text-gray-900"></strong></div>
+                                    <div class="col-span-2"><span class="font-medium text-gray-600">Type:</span> <strong id="res-company-type" class="font-semibold text-gray-900 text-xs"></strong></div>
+                                </div>
+                            </div>
+
+                            <!-- Detailed Breakdown -->
+                            <div class="space-y-3">
+                                <div class="bg-white rounded-lg p-4 border border-blue-100">
+                                    <h3 class="font-semibold text-blue-900 mb-3 text-sm">Government Fees for Incorporation</h3>
+                                    <div class="space-y-2 text-sm">
+                                        <div class="flex justify-between"><span class="text-gray-600">Normal Fee (SPICe+)</span> <span id="res-normal-fee" class="font-semibold text-gray-800"></span></div>
+                                        <div class="flex justify-between"><span class="text-gray-600">Additional Fee (MCA)</span> <span id="res-additional-fee" class="font-semibold text-gray-800"></span></div>
+                                        <div class="flex justify-between"><span class="text-gray-600">MoA Registration Fee</span> <span id="res-moa-reg-fee" class="font-semibold text-gray-800"></span></div>
+                                        <div class="flex justify-between"><span class="text-gray-600">AoA Registration Fee</span> <span id="res-aoa-reg-fee" class="font-semibold text-gray-800"></span></div>
+                                        <div class="flex justify-between font-medium border-t border-blue-200 pt-2 mt-2 text-blue-800"><span>Subtotal</span> <span id="res-gov-incorp-total"></span></div>
+                                    </div>
+                                </div>
+                                <div class="bg-white rounded-lg p-4 border border-green-100">
+                                    <h3 class="font-semibold text-green-900 mb-3 text-sm">Other Government Fees</h3>
+                                    <div class="space-y-2 text-sm">
+                                        <div class="flex justify-between"><span class="text-gray-600">Name Reservation</span> <span id="res-name-reservation" class="font-semibold text-gray-800"></span></div>
+                                        <div class="flex justify-between"><span class="text-gray-600">ePAN/TAN</span> <span id="res-epan-tan" class="font-semibold text-gray-800"></span></div>
+                                    </div>
+                                </div>
+                                <div class="bg-white rounded-lg p-4 border border-amber-100">
+                                    <h3 class="font-semibold text-amber-900 mb-3 text-sm">Government Stamp Duty</h3>
+                                    <div class="space-y-2 text-sm">
+                                        <div class="flex justify-between"><span class="text-gray-600">AoA Stamp Duty</span> <span id="res-aoa-stamp" class="font-semibold text-gray-800"></span></div>
+                                        <div class="flex justify-between"><span class="text-gray-600">MoA Stamp Duty</span> <span id="res-moa-stamp" class="font-semibold text-gray-800"></span></div>
+                                        <div class="flex justify-between"><span class="text-gray-600">INC Stamp Duty</span> <span id="res-inc-stamp" class="font-semibold text-gray-800"></span></div>
+                                        <div class="flex justify-between font-medium border-t border-amber-200 pt-2 mt-2 text-amber-800"><span>Subtotal</span> <span id="res-stamp-duty-total"></span></div>
+                                    </div>
+                                </div>
+                                <div class="bg-white rounded-lg p-4 border border-purple-100">
+                                    <h3 class="font-semibold text-purple-900 mb-3 text-sm">Professional Services</h3>
+                                    <div class="space-y-2 text-sm">
+                                        <div class="flex justify-between"><span class="text-gray-600">Professional Services Fee</span> <span id="res-professional-fee" class="font-semibold text-gray-800"></span></div>
+                                        <div class="flex justify-between"><span id="res-dsc-label" class="text-gray-600"></span> <span id="res-dsc-fees" class="font-semibold text-gray-800"></span></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Final Summary -->
+                            <div class="bg-gradient-to-r from-indigo-600 to-blue-600 rounded-xl p-6 text-white mt-4">
+                                <h3 class="text-xl font-bold mb-4 text-center">Fee Summary</h3>
+                                <div class="space-y-3">
+                                    <div class="flex justify-between items-center bg-white bg-opacity-20 rounded-lg p-3"><span>Professional Fees</span> <strong id="res-prof-fees-total" class="font-bold"></strong></div>
+                                    <div class="flex justify-between items-center bg-white bg-opacity-20 rounded-lg p-3"><span>GST on Professional Fees</span> <strong id="res-gst" class="font-bold"></strong></div>
+                                    <div class="flex justify-between items-center bg-white bg-opacity-20 rounded-lg p-3"><span>Government Fees</span> <strong id="res-gov-fees-total" class="font-bold"></strong></div>
+                                    <div class="border-t border-white border-opacity-30 pt-3 mt-3">
+                                        <div class="flex justify-between items-center text-xl font-bold"><span>Grand Total</span> <span id="res-grand-total" class="text-2xl"></span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- CONSTANTS AND RULES ---
+            const PROFESSIONAL_FEE = 3999;
+            const DSC_PER_DIRECTOR = 1800;
+            const NAME_RESERVATION_FEE = 1000;
+            const GOVT_ETAN_PAN = 143;
+            const ADDITIONAL_FEE = 0;
+            const NORMAL_FEE = 0;
+
+            const stampDutyRules = {
+                'Delhi': { share_capital: { inc: 10, moa: 200, aoa: (c) => pct(c, 0.0015, { max: 2500000 }) }, no_share_capital: { inc: 10, moa: 200, aoa: 200 }, section8: { inc: 10, moa: 0, aoa: 0 } },
+                'Haryana': { share_capital: { inc: 15, moa: 60, aoa: (c) => (c <= 100000 ? 60 : 120) }, no_share_capital: { inc: 15, moa: 60, aoa: 60 }, section8: { inc: 15, moa: 0, aoa: 0 } },
+                'Maharashtra': { share_capital: { inc: 100, moa: 200, aoa: (c) => perStep(c, 500000, 1000, { max: 5000000 }) }, no_share_capital: { inc: 100, moa: 0, aoa: 0 }, section8: { inc: 100, moa: 0, aoa: 0 } },
+                'Orissa': { share_capital: { inc: 10, moa: 300, aoa: 300 }, no_share_capital: { inc: 10, moa: 300, aoa: 300 }, section8: { inc: 10, moa: 300, aoa: 300 } },
+                'Andhra Pradesh': { share_capital: { inc: 20, moa: 500, aoa: (c) => pct(c, 0.0015, { min: 1000, max: 500000 }) }, no_share_capital: { inc: 20, moa: 500, aoa: 1000 }, section8: { inc: 20, moa: 500, aoa: (c) => pct(c, 0.0015, { min: 1000, max: 500000 }) } },
+                'Telangana': { share_capital: { inc: 20, moa: 500, aoa: (c) => pct(c, 0.0015, { min: 1000, max: 500000 }) }, no_share_capital: { inc: 20, moa: 500, aoa: 1000 }, section8: { inc: 20, moa: 500, aoa: (c) => pct(c, 0.0015, { min: 1000, max: 500000 }) } },
+                'Bihar': { share_capital: { inc: 20, moa: 500, aoa: (c) => Math.max(pct(c, 0.0015), 1000) }, no_share_capital: { inc: 20, moa: 500, aoa: 1000 }, section8: { inc: 20, moa: 0, aoa: 0 } },
+                'Jharkhand': { share_capital: { inc: 5, moa: 63, aoa: 105 }, no_share_capital: { inc: 5, moa: 63, aoa: 105 }, section8: { inc: 5, moa: 0, aoa: 0 } },
+                'Jammu and Kashmir': { share_capital: { inc: 10, moa: 150, aoa: (c) => (c <= 100000 ? 150 : 300) }, no_share_capital: { inc: 10, moa: 150, aoa: 150 }, section8: { inc: 10, moa: 0, aoa: 0 } },
+                'Tamil Nadu': { share_capital: { inc: 20, moa: 200, aoa: (c) => perStep(c, 1000000, 500) }, no_share_capital: { inc: 20, moa: 200, aoa: 300 }, section8: { inc: 20, moa: 0, aoa: 0 } },
+                'Puducherry': { share_capital: { inc: 10, moa: 200, aoa: 300 }, no_share_capital: { inc: 10, moa: 200, aoa: 300 }, section8: { inc: 10, moa: 0, aoa: 0 } },
+                'Assam': { share_capital: { inc: 15, moa: 200, aoa: 310 }, no_share_capital: { inc: 15, moa: 200, aoa: 310 }, section8: { inc: 15, moa: 200, aoa: 310 } },
+                'Meghalaya': { share_capital: { inc: 10, moa: 100, aoa: 300 }, no_share_capital: { inc: 10, moa: 100, aoa: 300 }, section8: { inc: 10, moa: 100, aoa: 300 } },
+                'Manipur': { share_capital: { inc: 10, moa: 100, aoa: 150 }, no_share_capital: { inc: 10, moa: 100, aoa: 150 }, section8: { inc: 10, moa: 100, aoa: 150 } },
+                'Nagaland': { share_capital: { inc: 10, moa: 100, aoa: 150 }, no_share_capital: { inc: 10, moa: 100, aoa: 150 }, section8: { inc: 10, moa: 100, aoa: 150 } },
+                'Tripura': { share_capital: { inc: 10, moa: 100, aoa: 150 }, no_share_capital: { inc: 10, moa: 100, aoa: 150 }, section8: { inc: 10, moa: 100, aoa: 150 } },
+                'Arunachal Pradesh': { share_capital: { inc: 10, moa: 200, aoa: 500 }, no_share_capital: { inc: 10, moa: 200, aoa: 500 }, section8: { inc: 10, moa: 200, aoa: 500 } },
+                'Mizoram': { share_capital: { inc: 10, moa: 100, aoa: 150 }, no_share_capital: { inc: 10, moa: 100, aoa: 150 }, section8: { inc: 10, moa: 100, aoa: 150 } },
+                'Kerala': { share_capital: { inc: 25, moa: 1000, aoa: (c) => { if (c <= 1000000) return 2000; if (c <= 2500000) return 5000; return c * 0.005; } }, no_share_capital: { inc: 25, moa: 1000, aoa: 2000 }, section8: { inc: 25, moa: 1000, aoa: (c) => { if (c <= 1000000) return 2000; if (c <= 2500000) return 5000; return c * 0.005; } } },
+                'Lakshadweep': { share_capital: { inc: 25, moa: 500, aoa: 1000 }, no_share_capital: { inc: 25, moa: 500, aoa: 1000 }, section8: { inc: 25, moa: 500, aoa: 1000 } },
+                'Madhya Pradesh': { share_capital: { inc: 50, moa: 2500, aoa: (c) => pct(c, 0.0015, { min: 5000, max: 2500000 }) }, no_share_capital: { inc: 50, moa: 2500, aoa: 5000 }, section8: { inc: 50, moa: 2500, aoa: (c) => pct(c, 0.0015, { min: 5000, max: 2500000 }) } },
+                'Chhattisgarh': { share_capital: { inc: 10, moa: 500, aoa: (c) => Math.max(pct(c, 0.0015), 1000) }, no_share_capital: { inc: 10, moa: 500, aoa: 1000 }, section8: { inc: 10, moa: 0, aoa: 0 } },
+                'Rajasthan': { share_capital: { inc: 10, moa: 500, aoa: (c) => pct(c, 0.005) }, no_share_capital: { inc: 10, moa: 500, aoa: 500 }, section8: { inc: 10, moa: 500, aoa: (c) => pct(c, 0.005) } },
+                'Punjab': { share_capital: { inc: 25, moa: 5000, aoa: (c) => (c <= 100000 ? 5000 : 10000) }, no_share_capital: { inc: 25, moa: 5000, aoa: 5000 }, section8: { inc: 25, moa: 0, aoa: 0 } },
+                'Himachal Pradesh': { share_capital: { inc: 3, moa: 60, aoa: (c) => (c <= 100000 ? 60 : 120) }, no_share_capital: { inc: 3, moa: 60, aoa: 60 }, section8: { inc: 3, moa: 0, aoa: 0 } },
+                'Chandigarh': { share_capital: { inc: 3, moa: 500, aoa: 1000 }, no_share_capital: { inc: 3, moa: 500, aoa: 1000 }, section8: { inc: 3, moa: 0, aoa: 0 } },
+                'Uttar Pradesh': { share_capital: { inc: 10, moa: 500, aoa: 500 }, no_share_capital: { inc: 10, moa: 500, aoa: 500 }, section8: { inc: 10, moa: 0, aoa: 0 } },
+                'Uttarakhand': { share_capital: { inc: 10, moa: 500, aoa: 500 }, no_share_capital: { inc: 10, moa: 500, aoa: 500 }, section8: { inc: 10, moa: 0, aoa: 0 } },
+                'West Bengal': { share_capital: { inc: 10, moa: 60, aoa: 300 }, no_share_capital: { inc: 10, moa: 60, aoa: 300 }, section8: { inc: 10, moa: 0, aoa: 0 } },
+                'Karnataka': { share_capital: { inc: 20, moa: 5000, aoa: (c) => perStep(c, 1000000, 1000, { max: 5000000 }) }, no_share_capital: { inc: 20, moa: 5000, aoa: 5000 }, section8: { inc: 20, moa: 0, aoa: 0 } },
+                'Gujarat': { share_capital: { inc: 20, moa: 100, aoa: (c) => Math.min(c * 0.005, 500000) }, no_share_capital: { inc: 20, moa: 300, aoa: 1000 }, section8: { inc: 20, moa: 0, aoa: 0 } },
+                'Dadra and Nagar Haveli': { share_capital: { inc: 1, moa: 15, aoa: 25 }, no_share_capital: { inc: 1, moa: 15, aoa: 25 }, section8: { inc: 1, moa: 0, aoa: 0 } },
+                'Goa': { share_capital: { inc: 50, moa: 150, aoa: (c) => perStep(c, 500000, 1000) }, no_share_capital: { inc: 50, moa: 150, aoa: 1000 }, section8: { inc: 50, moa: 0, aoa: 0 } },
+                'Daman and Diu': { share_capital: { inc: 20, moa: 150, aoa: (c) => perStep(c, 500000, 1000) }, no_share_capital: { inc: 20, moa: 150, aoa: 1000 }, section8: { inc: 20, moa: 0, aoa: 0 } },
+                'Andaman and Nicobar': { share_capital: { inc: 20, moa: 200, aoa: 300 }, no_share_capital: { inc: 20, moa: 200, aoa: 300 }, section8: { inc: 20, moa: 0, aoa: 0 } }
+            };
+
+            // --- HELPER FUNCTIONS ---
+            const formatCurrency = (amount) => new Intl.NumberFormat('en-IN', {
+                style: 'currency', currency: 'INR', minimumFractionDigits: 0, maximumFractionDigits: 0
+            }).format(amount || 0);
+
+            const pct = (capital, rate, { min = 0, max = Infinity } = {}) => Math.max(min, Math.min(capital * rate, max));
+            const perStep = (capital, step, perAmt, { max = Infinity } = {}) => Math.min(Math.ceil(capital / step) * perAmt, max);
+            
+            // --- DOM ELEMENT REFERENCES ---
+            const stateSelect = document.getElementById('state-select');
+            const companyTypeSelect = document.getElementById('company-type-select');
+            const capitalInput = document.getElementById('capital-input');
+            const directorsInput = document.getElementById('directors-input');
+            const calculateBtn = document.getElementById('calculate-btn');
+            const resultsPlaceholder = document.getElementById('results-placeholder');
+            const resultsOutput = document.getElementById('results-output');
+
+            // --- POPULATE STATES DROPDOWN ---
+            const states = Object.keys(stampDutyRules).sort();
+            states.forEach(state => {
+                const option = document.createElement('option');
+                option.value = state;
+                option.textContent = state;
+                stateSelect.appendChild(option);
+            });
+            stateSelect.value = 'Delhi';
+
+            // --- MAIN CALCULATION FUNCTION ---
+            const onCalculate = () => {
+                const selectedState = stateSelect.value;
+                const companyType = companyTypeSelect.value;
+                const authorizedCapital = Number(capitalInput.value) || 0;
+                const numDirectors = Number(directorsInput.value) || 0;
+
+                if (!selectedState || authorizedCapital < 0) {
+                    alert('Please select a state and enter a valid authorized capital.');
+                    return;
+                }
+
+                const rules = stampDutyRules[selectedState][companyType];
+                const val = (rule) => (typeof rule === 'function' ? rule(authorizedCapital) : rule);
+
+                const incStamp = val(rules.inc);
+                const moaStamp = val(rules.moa);
+                const aoaStamp = val(rules.aoa);
+
+                const govtFeesForIncorp = NORMAL_FEE + ADDITIONAL_FEE;
+                const nameReservation = NAME_RESERVATION_FEE;
+                const ePanTan = GOVT_ETAN_PAN;
+                const govtStampDutyTotal = incStamp + moaStamp + aoaStamp;
+                const dscFees = Math.max(0, numDirectors) * DSC_PER_DIRECTOR;
+                const professionalFeesTotal = PROFESSIONAL_FEE + dscFees;
+                const gstOnProfessional = Math.round(professionalFeesTotal * 0.18);
+                const governmentFeesTotal = govtFeesForIncorp + nameReservation + ePanTan + govtStampDutyTotal;
+                const grandTotal = professionalFeesTotal + gstOnProfessional + governmentFeesTotal;
+                
+                updateResultsUI({
+                    state: selectedState, capital: authorizedCapital, companyType, numDirectors,
+                    incStamp, moaStamp, aoaStamp, normalFee: NORMAL_FEE, additionalFee: ADDITIONAL_FEE,
+                    moaRegFee: 0, aoaRegFee: 0, govtFeesForIncorp, nameReservation, ePanTan,
+                    govtStampDutyTotal, dscFees, professional: PROFESSIONAL_FEE,
+                    professionalFeesTotal, gstOnProfessional, governmentFeesTotal, grandTotal
+                });
+            };
+            
+            // --- UI UPDATE HELPER ---
+            const updateResultsUI = (results) => {
+                resultsPlaceholder.classList.add('hidden');
+                resultsOutput.classList.remove('hidden');
+
+                const companyTypeMap = { 'share_capital': 'With Share Capital', 'no_share_capital': 'Without Share Capital', 'section8': 'Section 8' };
+
+                document.getElementById('res-state').textContent = results.state;
+                document.getElementById('res-capital').textContent = formatCurrency(results.capital);
+                document.getElementById('res-company-type').textContent = companyTypeMap[results.companyType];
+                document.getElementById('res-normal-fee').textContent = formatCurrency(results.normalFee);
+                document.getElementById('res-additional-fee').textContent = formatCurrency(results.additionalFee);
+                document.getElementById('res-moa-reg-fee').textContent = formatCurrency(results.moaRegFee);
+                document.getElementById('res-aoa-reg-fee').textContent = formatCurrency(results.aoaRegFee);
+                document.getElementById('res-gov-incorp-total').textContent = formatCurrency(results.govtFeesForIncorp);
+                document.getElementById('res-name-reservation').textContent = formatCurrency(results.nameReservation);
+                document.getElementById('res-epan-tan').textContent = formatCurrency(results.ePanTan);
+                document.getElementById('res-aoa-stamp').textContent = formatCurrency(results.aoaStamp);
+                document.getElementById('res-moa-stamp').textContent = formatCurrency(results.moaStamp);
+                document.getElementById('res-inc-stamp').textContent = formatCurrency(results.incStamp);
+                document.getElementById('res-stamp-duty-total').textContent = formatCurrency(results.govtStampDutyTotal);
+                document.getElementById('res-professional-fee').textContent = formatCurrency(results.professional);
+                document.getElementById('res-dsc-label').textContent = `DSC Fees (₹${DSC_PER_DIRECTOR} × ${results.numDirectors} director${results.numDirectors !== 1 ? 's' : ''})`;
+                document.getElementById('res-dsc-fees').textContent = formatCurrency(results.dscFees);
+                document.getElementById('res-prof-fees-total').textContent = formatCurrency(results.professionalFeesTotal);
+                document.getElementById('res-gst').textContent = formatCurrency(results.gstOnProfessional);
+                document.getElementById('res-gov-fees-total').textContent = formatCurrency(results.governmentFeesTotal);
+                document.getElementById('res-grand-total').textContent = formatCurrency(results.grandTotal);
+            };
+
+            // --- EVENT LISTENER ---
+            calculateBtn.addEventListener('click', onCalculate);
+        });
+    </script>
+</body>
+</html>
