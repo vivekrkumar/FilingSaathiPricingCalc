@@ -6,87 +6,46 @@
     <title>Company Incorporation Calculator</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Custom Styles for better look and feel */
+        /* Using a common, clean font */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-        }
-        .gradient-bg {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-        }
-        .card {
-            background-color: white;
-            border-radius: 1.5rem; /* More rounded corners */
-            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
-        }
-        .card-header {
-            background: linear-gradient(to right, #4f46e5, #3b82f6);
-        }
-        .btn-primary {
-            background: linear-gradient(to right, #4f46e5, #3b82f6);
-            transition: all 0.3s ease;
-            transform: translateY(0);
-        }
-        .btn-primary:hover {
-            box-shadow: 0 10px 20px -5px rgba(79, 70, 229, 0.4);
-            transform: translateY(-3px);
-        }
-        input, select {
-            transition: all 0.2s ease-in-out;
-            border-width: 2px;
-        }
-        input:focus, select:focus {
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
-            border-color: #4f46e5;
-        }
-        .step-circle {
-            width: 2.25rem;
-            height: 2.25rem;
-            background-color: #e0e7ff;
-            color: #4338ca;
-            font-weight: 700;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 9999px;
-            margin-right: 0.75rem;
         }
         .hidden {
             display: none;
         }
     </style>
 </head>
-<body class="gradient-bg">
+<body class="bg-gradient-to-br from-indigo-50 via-white to-blue-50">
 
     <div class="min-h-screen flex items-center justify-center p-4">
         <div class="max-w-6xl w-full mx-auto">
-            <div class="card">
+            <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
                 <!-- Header -->
-                <header class="card-header p-8 text-center text-white">
+                <header class="bg-gradient-to-r from-indigo-600 to-blue-600 px-8 py-6 text-center text-white">
                     <h1 class="text-4xl font-bold mb-2">Company Incorporation Calculator</h1>
-                    <p class="text-indigo-100">Latest SPICeB stamp duty rates • SH-7 excluded • GST @18%</p>
+                    <p id="header-subtitle" class="text-indigo-100">
+                        Rates as of <span id="current-date"></span> • Latest SPICeB stamp duty rates • SH-7 excluded • GST @18%
+                    </p>
                 </header>
 
                 <main class="p-8 grid lg:grid-cols-2 gap-8">
                     <!-- Inputs Section -->
                     <div class="space-y-6">
                         <h2 class="text-2xl font-semibold text-gray-800 flex items-center">
-                            <span class="step-circle">1</span>
+                            <span class="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center mr-3">
+                                <span class="text-indigo-600 font-bold">1</span>
+                            </span>
                             Company Details
                         </h2>
                         <div class="space-y-4">
                             <div>
                                 <label for="state-select" class="block text-sm font-semibold text-gray-700 mb-2">Select State/UT</label>
-                                <select id="state-select" class="w-full p-3 border-gray-200 rounded-xl bg-white"></select>
+                                <select id="state-select" class="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white"></select>
                             </div>
                             <div>
                                 <label for="company-type-select" class="block text-sm font-semibold text-gray-700 mb-2">Company Type</label>
-                                <select id="company-type-select" class="w-full p-3 border-gray-200 rounded-xl bg-white">
+                                <select id="company-type-select" class="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white">
                                     <option value="share_capital">With Share Capital (non-Section 8)</option>
                                     <option value="no_share_capital">Without Share Capital (non-Section 8)</option>
                                     <option value="section8">Section 8</option>
@@ -94,22 +53,24 @@
                             </div>
                             <div>
                                 <label for="capital-input" class="block text-sm font-semibold text-gray-700 mb-2">Authorized Share Capital (₹)</label>
-                                <input type="number" id="capital-input" value="1000000" min="0" step="1000" class="w-full p-3 border-gray-200 rounded-xl">
+                                <input type="number" id="capital-input" value="1000000" min="0" step="1000" class="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200">
                             </div>
                             <div>
                                 <label for="directors-input" class="block text-sm font-semibold text-gray-700 mb-2">Number of Directors</label>
-                                <input type="number" id="directors-input" value="2" min="1" step="1" class="w-full p-3 border-gray-200 rounded-xl">
+                                <input type="number" id="directors-input" value="2" min="1" step="1" class="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200">
                             </div>
-                            <button id="calculate-btn" class="w-full btn-primary text-white py-3 px-8 rounded-xl font-semibold text-lg shadow-lg">
+                            <button id="calculate-btn" class="w-full bg-gradient-to-r from-indigo-600 to-blue-600 text-white py-4 px-8 rounded-xl hover:from-indigo-700 hover:to-blue-700 transition-all duration-200 font-semibold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
                                 Calculate Fees
                             </button>
                         </div>
                     </div>
 
                     <!-- Results Section -->
-                    <div class="bg-gray-50 rounded-xl p-6">
+                    <div class="bg-gradient-to-br from-gray-50 to-indigo-50 rounded-xl p-6">
                         <h2 class="text-2xl font-semibold text-gray-800 mb-6 flex items-center">
-                            <span class="step-circle">2</span>
+                            <span class="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center mr-3">
+                                <span class="text-indigo-600 font-bold">2</span>
+                            </span>
                             Fee Breakdown
                         </h2>
                         <div id="results-placeholder" class="text-center py-12">
@@ -118,7 +79,7 @@
                             </div>
                             <p class="text-gray-600">Enter details to see the fee breakdown.</p>
                         </div>
-                        <div id="results-output" class="hidden space-y-4">
+                        <div id="results-output" class="hidden space-y-6">
                             <!-- Summary Info -->
                             <div class="bg-white rounded-lg p-4 border border-indigo-100">
                                 <div class="grid grid-cols-2 gap-4 text-sm">
@@ -129,7 +90,7 @@
                             </div>
 
                             <!-- Detailed Breakdown -->
-                            <div class="space-y-3">
+                            <div class="space-y-4">
                                 <div class="bg-white rounded-lg p-4 border border-blue-100">
                                     <h3 class="font-semibold text-blue-900 mb-3 text-sm">Government Fees for Incorporation</h3>
                                     <div class="space-y-2 text-sm">
@@ -186,13 +147,20 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // --- DATE DISPLAY ---
+            const dateElement = document.getElementById('current-date');
+            if (dateElement) {
+                dateElement.textContent = new Date().toLocaleDateString('en-US', {
+                    year: 'numeric', month: 'long', day: 'numeric'
+                });
+            }
+
             // --- CONSTANTS AND RULES ---
             const PROFESSIONAL_FEE = 3999;
             const DSC_PER_DIRECTOR = 1800;
             const NAME_RESERVATION_FEE = 1000;
             const GOVT_ETAN_PAN = 143;
             const ADDITIONAL_FEE = 0;
-            const NORMAL_FEE = 0;
 
             const stampDutyRules = {
                 'Delhi': { share_capital: { inc: 10, moa: 200, aoa: (c) => pct(c, 0.0015, { max: 2500000 }) }, no_share_capital: { inc: 10, moa: 200, aoa: 200 }, section8: { inc: 10, moa: 0, aoa: 0 } },
@@ -235,11 +203,35 @@
             // --- HELPER FUNCTIONS ---
             const formatCurrency = (amount) => new Intl.NumberFormat('en-IN', {
                 style: 'currency', currency: 'INR', minimumFractionDigits: 0, maximumFractionDigits: 0
-            }).format(amount || 0);
+            }).format(Math.round(amount || 0));
 
             const pct = (capital, rate, { min = 0, max = Infinity } = {}) => Math.max(min, Math.min(capital * rate, max));
             const perStep = (capital, step, perAmt, { max = Infinity } = {}) => Math.min(Math.ceil(capital / step) * perAmt, max);
             
+            // --- GOVERNMENT FEE CALCULATION FUNCTIONS ---
+            function computeNormalFee(capital) {
+                return capital > 1500000 ? 500 : 0;
+            }
+
+            function ceilPer10k(amount) {
+                return Math.ceil(amount / 10000);
+            }
+
+            function computeMoAFee(capital) {
+                if (capital <= 1500000) return 0;
+                const feeAt2_5Cr = 206000 + ceilPer10k(25000000 - 10000000) * 75;
+                if (capital <= 5000000) return Math.min(51000 + ceilPer10k(capital - 1500000) * 300, feeAt2_5Cr);
+                if (capital <= 10000000) return Math.min(156000 + ceilPer10k(capital - 5000000) * 100, feeAt2_5Cr);
+                return Math.min(206000 + ceilPer10k(capital - 10000000) * 75, feeAt2_5Cr);
+            }
+
+            function computeAoAFee(capital) {
+                if (capital <= 1500000) return 0;
+                if (capital <= 2499999) return 400;
+                if (capital <= 9999999) return 500;
+                return 600;
+            }
+
             // --- DOM ELEMENT REFERENCES ---
             const stateSelect = document.getElementById('state-select');
             const companyTypeSelect = document.getElementById('company-type-select');
@@ -278,7 +270,11 @@
                 const moaStamp = val(rules.moa);
                 const aoaStamp = val(rules.aoa);
 
-                const govtFeesForIncorp = NORMAL_FEE + ADDITIONAL_FEE;
+                const normalFee = computeNormalFee(authorizedCapital);
+                const moaRegFee = companyType === 'share_capital' ? computeMoAFee(authorizedCapital) : 0;
+                const aoaRegFee = companyType === 'share_capital' ? computeAoAFee(authorizedCapital) : 0;
+                
+                const govtFeesForIncorp = normalFee + ADDITIONAL_FEE + moaRegFee + aoaRegFee;
                 const nameReservation = NAME_RESERVATION_FEE;
                 const ePanTan = GOVT_ETAN_PAN;
                 const govtStampDutyTotal = incStamp + moaStamp + aoaStamp;
@@ -290,8 +286,8 @@
                 
                 updateResultsUI({
                     state: selectedState, capital: authorizedCapital, companyType, numDirectors,
-                    incStamp, moaStamp, aoaStamp, normalFee: NORMAL_FEE, additionalFee: ADDITIONAL_FEE,
-                    moaRegFee: 0, aoaRegFee: 0, govtFeesForIncorp, nameReservation, ePanTan,
+                    incStamp, moaStamp, aoaStamp, normalFee, additionalFee: ADDITIONAL_FEE,
+                    moaRegFee, aoaRegFee, govtFeesForIncorp, nameReservation, ePanTan,
                     govtStampDutyTotal, dscFees, professional: PROFESSIONAL_FEE,
                     professionalFeesTotal, gstOnProfessional, governmentFeesTotal, grandTotal
                 });
@@ -319,7 +315,7 @@
                 document.getElementById('res-inc-stamp').textContent = formatCurrency(results.incStamp);
                 document.getElementById('res-stamp-duty-total').textContent = formatCurrency(results.govtStampDutyTotal);
                 document.getElementById('res-professional-fee').textContent = formatCurrency(results.professional);
-                document.getElementById('res-dsc-label').textContent = `DSC Fees (₹${DSC_PER_DIRECTOR} × ${results.numDirectors} director${results.numDirectors !== 1 ? 's' : ''})`;
+                document.getElementById('res-dsc-label').textContent = `DSC Fees (₹${DSC_PER_DIRECTOR.toLocaleString('en-IN')} × ${results.numDirectors} director${results.numDirectors !== 1 ? 's' : ''})`;
                 document.getElementById('res-dsc-fees').textContent = formatCurrency(results.dscFees);
                 document.getElementById('res-prof-fees-total').textContent = formatCurrency(results.professionalFeesTotal);
                 document.getElementById('res-gst').textContent = formatCurrency(results.gstOnProfessional);
