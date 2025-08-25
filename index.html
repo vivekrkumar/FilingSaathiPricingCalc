@@ -25,7 +25,7 @@
                 <header class="bg-gradient-to-r from-indigo-600 to-blue-600 px-8 py-6 text-center text-white">
                     <h1 class="text-4xl font-bold mb-2">Company Incorporation Calculator</h1>
                     <p id="header-subtitle" class="text-indigo-100">
-                        Rates as of <span id="current-date"></span> • Latest SPICeB stamp duty rates • SH-7 excluded • GST @18%
+                        Uses latest SPICeB stamp duty + Government fees and LLP rules
                     </p>
                 </header>
 
@@ -49,14 +49,17 @@
                                     <option value="share_capital">With Share Capital (non-Section 8)</option>
                                     <option value="no_share_capital">Without Share Capital (non-Section 8)</option>
                                     <option value="section8">Section 8</option>
+                                    <option value="opc">One Person Company (OPC)</option>
+                                    <option value="llp">Limited Liability Partnership (LLP)</option>
                                 </select>
                             </div>
                             <div>
-                                <label for="capital-input" class="block text-sm font-semibold text-gray-700 mb-2">Authorized Share Capital (₹)</label>
-                                <input type="number" id="capital-input" value="1000000" min="0" step="1000" class="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200">
+                                <label for="capital-select" class="block text-sm font-semibold text-gray-700 mb-2">Authorized Share Capital (₹)</label>
+                                <select id="capital-select" class="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white">
+                                </select>
                             </div>
                             <div>
-                                <label for="directors-input" class="block text-sm font-semibold text-gray-700 mb-2">Number of Directors</label>
+                                <label for="directors-input" class="block text-sm font-semibold text-gray-700 mb-2">Number of Directors/Partners</label>
                                 <input type="number" id="directors-input" value="2" min="1" step="1" class="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200">
                             </div>
                             <button id="calculate-btn" class="w-full bg-gradient-to-r from-indigo-600 to-blue-600 text-white py-4 px-8 rounded-xl hover:from-indigo-700 hover:to-blue-700 transition-all duration-200 font-semibold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
@@ -94,7 +97,7 @@
                                 <div class="bg-white rounded-lg p-4 border border-blue-100">
                                     <h3 class="font-semibold text-blue-900 mb-3 text-sm">Government Fees for Incorporation</h3>
                                     <div class="space-y-2 text-sm">
-                                        <div class="flex justify-between"><span class="text-gray-600">Normal Fee (SPICe+)</span> <span id="res-normal-fee" class="font-semibold text-gray-800"></span></div>
+                                        <div class="flex justify-between"><span class="text-gray-600">Normal Fee (SPICe+/FiLLiP)</span> <span id="res-normal-fee" class="font-semibold text-gray-800"></span></div>
                                         <div class="flex justify-between"><span class="text-gray-600">Additional Fee (MCA)</span> <span id="res-additional-fee" class="font-semibold text-gray-800"></span></div>
                                         <div class="flex justify-between"><span class="text-gray-600">MoA Registration Fee</span> <span id="res-moa-reg-fee" class="font-semibold text-gray-800"></span></div>
                                         <div class="flex justify-between"><span class="text-gray-600">AoA Registration Fee</span> <span id="res-aoa-reg-fee" class="font-semibold text-gray-800"></span></div>
@@ -147,22 +150,20 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- DATE DISPLAY ---
-            const dateElement = document.getElementById('current-date');
-            if (dateElement) {
-                dateElement.textContent = new Date().toLocaleDateString('en-US', {
-                    year: 'numeric', month: 'long', day: 'numeric'
-                });
-            }
-
             // --- CONSTANTS AND RULES ---
             const PROFESSIONAL_FEE = 3999;
             const DSC_PER_DIRECTOR = 1800;
             const NAME_RESERVATION_FEE = 1000;
+            const LLP_NAME_APPROVAL_FEE = 200;
             const GOVT_ETAN_PAN = 143;
             const ADDITIONAL_FEE = 0;
 
             const stampDutyRules = {
+                'Karnataka': {
+                    share_capital: { inc: 20, moa: 5000, aoa: (c) => Math.max(0, Math.ceil(c / 1000000) * 5000) },
+                    no_share_capital: { inc: 20, moa: 5000, aoa: (c) => Math.max(0, Math.ceil(c / 1000000) * 5000) },
+                    section8: { inc: 20, moa: 0, aoa: 0 }
+                },
                 'Delhi': { share_capital: { inc: 10, moa: 200, aoa: (c) => pct(c, 0.0015, { max: 2500000 }) }, no_share_capital: { inc: 10, moa: 200, aoa: 200 }, section8: { inc: 10, moa: 0, aoa: 0 } },
                 'Haryana': { share_capital: { inc: 15, moa: 60, aoa: (c) => (c <= 100000 ? 60 : 120) }, no_share_capital: { inc: 15, moa: 60, aoa: 60 }, section8: { inc: 15, moa: 0, aoa: 0 } },
                 'Maharashtra': { share_capital: { inc: 100, moa: 200, aoa: (c) => perStep(c, 500000, 1000, { max: 5000000 }) }, no_share_capital: { inc: 100, moa: 0, aoa: 0 }, section8: { inc: 100, moa: 0, aoa: 0 } },
@@ -192,7 +193,6 @@
                 'Uttar Pradesh': { share_capital: { inc: 10, moa: 500, aoa: 500 }, no_share_capital: { inc: 10, moa: 500, aoa: 500 }, section8: { inc: 10, moa: 0, aoa: 0 } },
                 'Uttarakhand': { share_capital: { inc: 10, moa: 500, aoa: 500 }, no_share_capital: { inc: 10, moa: 500, aoa: 500 }, section8: { inc: 10, moa: 0, aoa: 0 } },
                 'West Bengal': { share_capital: { inc: 10, moa: 60, aoa: 300 }, no_share_capital: { inc: 10, moa: 60, aoa: 300 }, section8: { inc: 10, moa: 0, aoa: 0 } },
-                'Karnataka': { share_capital: { inc: 20, moa: 5000, aoa: (c) => perStep(c, 1000000, 1000, { max: 5000000 }) }, no_share_capital: { inc: 20, moa: 5000, aoa: 5000 }, section8: { inc: 20, moa: 0, aoa: 0 } },
                 'Gujarat': { share_capital: { inc: 20, moa: 100, aoa: (c) => Math.min(c * 0.005, 500000) }, no_share_capital: { inc: 20, moa: 300, aoa: 1000 }, section8: { inc: 20, moa: 0, aoa: 0 } },
                 'Dadra and Nagar Haveli': { share_capital: { inc: 1, moa: 15, aoa: 25 }, no_share_capital: { inc: 1, moa: 15, aoa: 25 }, section8: { inc: 1, moa: 0, aoa: 0 } },
                 'Goa': { share_capital: { inc: 50, moa: 150, aoa: (c) => perStep(c, 500000, 1000) }, no_share_capital: { inc: 50, moa: 150, aoa: 1000 }, section8: { inc: 50, moa: 0, aoa: 0 } },
@@ -209,14 +209,8 @@
             const perStep = (capital, step, perAmt, { max = Infinity } = {}) => Math.min(Math.ceil(capital / step) * perAmt, max);
             
             // --- GOVERNMENT FEE CALCULATION FUNCTIONS ---
-            function computeNormalFee(capital) {
-                return capital > 1500000 ? 500 : 0;
-            }
-
-            function ceilPer10k(amount) {
-                return Math.ceil(amount / 10000);
-            }
-
+            function computeNormalFee(capital) { return capital > 1500000 ? 500 : 0; }
+            function ceilPer10k(amount) { return Math.ceil(amount / 10000); }
             function computeMoAFee(capital) {
                 if (capital <= 1500000) return 0;
                 const feeAt2_5Cr = 206000 + ceilPer10k(25000000 - 10000000) * 75;
@@ -224,24 +218,29 @@
                 if (capital <= 10000000) return Math.min(156000 + ceilPer10k(capital - 5000000) * 100, feeAt2_5Cr);
                 return Math.min(206000 + ceilPer10k(capital - 10000000) * 75, feeAt2_5Cr);
             }
-
             function computeAoAFee(capital) {
                 if (capital <= 1500000) return 0;
                 if (capital <= 2499999) return 400;
                 if (capital <= 9999999) return 500;
                 return 600;
             }
+            function computeLLPGovtFee(capital) {
+                if (capital <= 100000) return 500;
+                if (capital <= 500000) return 2000;
+                if (capital <= 1000000) return 4000;
+                return 5000;
+            }
 
             // --- DOM ELEMENT REFERENCES ---
             const stateSelect = document.getElementById('state-select');
             const companyTypeSelect = document.getElementById('company-type-select');
-            const capitalInput = document.getElementById('capital-input');
+            const capitalSelect = document.getElementById('capital-select');
             const directorsInput = document.getElementById('directors-input');
             const calculateBtn = document.getElementById('calculate-btn');
             const resultsPlaceholder = document.getElementById('results-placeholder');
             const resultsOutput = document.getElementById('results-output');
 
-            // --- POPULATE STATES DROPDOWN ---
+            // --- POPULATE DROPDOWNS ---
             const states = Object.keys(stampDutyRules).sort();
             states.forEach(state => {
                 const option = document.createElement('option');
@@ -249,47 +248,80 @@
                 option.textContent = state;
                 stateSelect.appendChild(option);
             });
-            stateSelect.value = 'Delhi';
+            stateSelect.value = 'Karnataka';
+
+            const capitalOptions = Array.from({ length: 100 }, (_, i) => (i + 1) * 100000);
+            capitalOptions.forEach(v => {
+                const option = document.createElement('option');
+                option.value = v;
+                option.textContent = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(v);
+                capitalSelect.appendChild(option);
+            });
+            capitalSelect.value = 1000000;
+
 
             // --- MAIN CALCULATION FUNCTION ---
             const onCalculate = () => {
                 const selectedState = stateSelect.value;
                 const companyType = companyTypeSelect.value;
-                const authorizedCapital = Number(capitalInput.value) || 0;
+                const authorizedCapital = Number(capitalSelect.value) || 0;
                 const numDirectors = Number(directorsInput.value) || 0;
 
                 if (!selectedState || authorizedCapital < 0) {
                     alert('Please select a state and enter a valid authorized capital.');
                     return;
                 }
-
-                const rules = stampDutyRules[selectedState][companyType];
-                const val = (rule) => (typeof rule === 'function' ? rule(authorizedCapital) : rule);
-
-                const incStamp = val(rules.inc);
-                const moaStamp = val(rules.moa);
-                const aoaStamp = val(rules.aoa);
-
-                const normalFee = computeNormalFee(authorizedCapital);
-                const moaRegFee = companyType === 'share_capital' ? computeMoAFee(authorizedCapital) : 0;
-                const aoaRegFee = companyType === 'share_capital' ? computeAoAFee(authorizedCapital) : 0;
                 
-                const govtFeesForIncorp = normalFee + ADDITIONAL_FEE + moaRegFee + aoaRegFee;
-                const nameReservation = NAME_RESERVATION_FEE;
-                const ePanTan = GOVT_ETAN_PAN;
-                const govtStampDutyTotal = incStamp + moaStamp + aoaStamp;
-                const dscFees = Math.max(0, numDirectors) * DSC_PER_DIRECTOR;
-                const professionalFeesTotal = PROFESSIONAL_FEE + dscFees;
-                const gstOnProfessional = Math.round(professionalFeesTotal * 0.18);
-                const governmentFeesTotal = govtFeesForIncorp + nameReservation + ePanTan + govtStampDutyTotal;
-                const grandTotal = professionalFeesTotal + gstOnProfessional + governmentFeesTotal;
+                let results;
+
+                if (companyType === 'llp') {
+                    const normalFee = computeLLPGovtFee(authorizedCapital);
+                    const govtFeesForIncorp = normalFee + ADDITIONAL_FEE;
+                    const nameReservation = LLP_NAME_APPROVAL_FEE;
+                    const ePanTan = GOVT_ETAN_PAN;
+                    const govtStampDutyTotal = 0;
+                    const dscFees = Math.max(0, numDirectors) * DSC_PER_DIRECTOR;
+                    const professionalFeesTotal = PROFESSIONAL_FEE + dscFees;
+                    const gstOnProfessional = Math.round(professionalFeesTotal * 0.18);
+                    const governmentFeesTotal = govtFeesForIncorp + nameReservation + ePanTan + govtStampDutyTotal;
+                    const grandTotal = professionalFeesTotal + gstOnProfessional + governmentFeesTotal;
+                    results = {
+                        incStamp: 0, moaStamp: 0, aoaStamp: 0, moaRegFee: 0, aoaRegFee: 0,
+                        normalFee, govtFeesForIncorp, nameReservation, ePanTan, govtStampDutyTotal,
+                        dscFees, professional: PROFESSIONAL_FEE, professionalFeesTotal,
+                        gstOnProfessional, governmentFeesTotal, grandTotal
+                    };
+                } else {
+                    const effectiveType = companyType === 'opc' ? 'share_capital' : companyType;
+                    const rules = stampDutyRules[selectedState][effectiveType];
+                    const val = (rule) => (typeof rule === 'function' ? rule(authorizedCapital) : rule);
+                    const incStamp = val(rules.inc);
+                    const moaStamp = val(rules.moa);
+                    const aoaStamp = val(rules.aoa);
+                    const normalFee = computeNormalFee(authorizedCapital);
+                    const moaRegFee = (companyType === 'share_capital' || companyType === 'opc') ? computeMoAFee(authorizedCapital) : 0;
+                    const aoaRegFee = (companyType === 'share_capital' || companyType === 'opc') ? computeAoAFee(authorizedCapital) : 0;
+                    const govtFeesForIncorp = normalFee + ADDITIONAL_FEE + moaRegFee + aoaRegFee;
+                    const nameReservation = NAME_RESERVATION_FEE;
+                    const ePanTan = GOVT_ETAN_PAN;
+                    const govtStampDutyTotal = incStamp + moaStamp + aoaStamp;
+                    const dscFees = Math.max(0, numDirectors) * DSC_PER_DIRECTOR;
+                    const professionalFeesTotal = PROFESSIONAL_FEE + dscFees;
+                    const gstOnProfessional = Math.round(professionalFeesTotal * 0.18);
+                    const governmentFeesTotal = govtFeesForIncorp + nameReservation + ePanTan + govtStampDutyTotal;
+                    const grandTotal = professionalFeesTotal + gstOnProfessional + governmentFeesTotal;
+                    results = {
+                        incStamp, moaStamp, aoaStamp, normalFee, moaRegFee, aoaRegFee,
+                        govtFeesForIncorp, nameReservation, ePanTan, govtStampDutyTotal,
+                        dscFees, professional: PROFESSIONAL_FEE, professionalFeesTotal,
+                        gstOnProfessional, governmentFeesTotal, grandTotal
+                    };
+                }
                 
                 updateResultsUI({
+                    ...results,
                     state: selectedState, capital: authorizedCapital, companyType, numDirectors,
-                    incStamp, moaStamp, aoaStamp, normalFee, additionalFee: ADDITIONAL_FEE,
-                    moaRegFee, aoaRegFee, govtFeesForIncorp, nameReservation, ePanTan,
-                    govtStampDutyTotal, dscFees, professional: PROFESSIONAL_FEE,
-                    professionalFeesTotal, gstOnProfessional, governmentFeesTotal, grandTotal
+                    additionalFee: ADDITIONAL_FEE,
                 });
             };
             
@@ -298,7 +330,13 @@
                 resultsPlaceholder.classList.add('hidden');
                 resultsOutput.classList.remove('hidden');
 
-                const companyTypeMap = { 'share_capital': 'With Share Capital', 'no_share_capital': 'Without Share Capital', 'section8': 'Section 8' };
+                const companyTypeMap = { 
+                    'share_capital': 'With Share Capital', 
+                    'no_share_capital': 'Without Share Capital', 
+                    'section8': 'Section 8',
+                    'opc': 'One Person Company (OPC)',
+                    'llp': 'Limited Liability Partnership (LLP)'
+                };
 
                 document.getElementById('res-state').textContent = results.state;
                 document.getElementById('res-capital').textContent = formatCurrency(results.capital);
@@ -315,7 +353,7 @@
                 document.getElementById('res-inc-stamp').textContent = formatCurrency(results.incStamp);
                 document.getElementById('res-stamp-duty-total').textContent = formatCurrency(results.govtStampDutyTotal);
                 document.getElementById('res-professional-fee').textContent = formatCurrency(results.professional);
-                document.getElementById('res-dsc-label').textContent = `DSC Fees (₹${DSC_PER_DIRECTOR.toLocaleString('en-IN')} × ${results.numDirectors} director${results.numDirectors !== 1 ? 's' : ''})`;
+                document.getElementById('res-dsc-label').textContent = `DSC Fees (₹${DSC_PER_DIRECTOR.toLocaleString('en-IN')} × ${results.numDirectors} director/partner${results.numDirectors !== 1 ? 's' : ''})`;
                 document.getElementById('res-dsc-fees').textContent = formatCurrency(results.dscFees);
                 document.getElementById('res-prof-fees-total').textContent = formatCurrency(results.professionalFeesTotal);
                 document.getElementById('res-gst').textContent = formatCurrency(results.gstOnProfessional);
