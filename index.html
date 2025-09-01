@@ -25,7 +25,7 @@
                 <header class="bg-gradient-to-r from-indigo-600 to-blue-600 px-8 py-6 text-center text-white">
                     <h1 class="text-4xl font-bold mb-2">Company Incorporation Calculator</h1>
                     <p id="header-subtitle" class="text-indigo-100">
-                        Uses latest SPICeB stamp duty + Government fees and LLP rules
+                        Deep-pass SPICeB state rules + your overrides applied
                     </p>
                 </header>
 
@@ -112,11 +112,11 @@
                                     </div>
                                 </div>
                                 <div class="bg-white rounded-lg p-4 border border-amber-100">
-                                    <h3 class="font-semibold text-amber-900 mb-3 text-sm">Government Stamp Duty</h3>
+                                    <h3 class="font-semibold text-amber-900 mb-3 text-sm">Government Stamp Duty (SPICeB)</h3>
                                     <div class="space-y-2 text-sm">
-                                        <div class="flex justify-between"><span class="text-gray-600">AoA Stamp Duty</span> <span id="res-aoa-stamp" class="font-semibold text-gray-800"></span></div>
+                                        <div class="flex justify-between"><span class="text-gray-600">INC (SPICe+ Part B)</span> <span id="res-inc-stamp" class="font-semibold text-gray-800"></span></div>
                                         <div class="flex justify-between"><span class="text-gray-600">MoA Stamp Duty</span> <span id="res-moa-stamp" class="font-semibold text-gray-800"></span></div>
-                                        <div class="flex justify-between"><span class="text-gray-600">INC Stamp Duty</span> <span id="res-inc-stamp" class="font-semibold text-gray-800"></span></div>
+                                        <div class="flex justify-between"><span class="text-gray-600">AoA Stamp Duty</span> <span id="res-aoa-stamp" class="font-semibold text-gray-800"></span></div>
                                         <div class="flex justify-between font-medium border-t border-amber-200 pt-2 mt-2 text-amber-800"><span>Subtotal</span> <span id="res-stamp-duty-total"></span></div>
                                     </div>
                                 </div>
@@ -150,7 +150,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- CONSTANTS AND RULES ---
+            // --- CONSTANTS AND HELPERS ---
             const PROFESSIONAL_FEE = 3999;
             const DSC_PER_DIRECTOR = 1800;
             const NAME_RESERVATION_FEE = 1000;
@@ -158,22 +158,43 @@
             const GOVT_ETAN_PAN = 143;
             const ADDITIONAL_FEE = 0;
 
+            const formatCurrency = (n) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(Math.round(n || 0));
+            const ceilDiv = (n, d) => Math.ceil(n / d);
+            const pct = (capital, rate, { min = 0, max = Infinity } = {}) => Math.max(min, Math.min(capital * rate, max));
+            const perStep = (capital, step, perAmt, { max = Infinity } = {}) => Math.min(ceilDiv(capital, step) * perAmt, max);
+            
+            // --- GOVERNMENT FEE FUNCTIONS ---
+            function computeNormalFee(capital) { return capital > 1500000 ? 500 : 0; }
+            function ceilPer10k(amount) { return Math.ceil(amount / 10000); }
+            function computeMoAFee(capital) {
+                if (capital <= 1500000) return 0;
+                const capAt2_5Cr = 206000 + ceilPer10k(25000000 - 10000000) * 75;
+                if (capital <= 5000000) return Math.min(51000 + ceilPer10k(capital - 1500000) * 300, capAt2_5Cr);
+                if (capital <= 10000000) return Math.min(156000 + ceilPer10k(capital - 5000000) * 100, capAt2_5Cr);
+                return Math.min(206000 + ceilPer10k(capital - 10000000) * 75, capAt2_5Cr);
+            }
+            function computeAoAFee(capital) {
+                if (capital <= 1500000) return 0;
+                if (capital <= 2499999) return 400;
+                if (capital <= 9999999) return 500;
+                return 600;
+            }
+
+            // --- STAMP DUTY RULES ---
             const stampDutyRules = {
-                'Karnataka': {
-                    share_capital: { inc: 20, moa: 5000, aoa: (c) => Math.max(0, Math.ceil(c / 1000000) * 5000) },
-                    no_share_capital: { inc: 20, moa: 5000, aoa: (c) => Math.max(0, Math.ceil(c / 1000000) * 5000) },
-                    section8: { inc: 20, moa: 0, aoa: 0 }
-                },
+                'Karnataka': { share_capital: { inc: 20, moa: 5000, aoa: (c) => Math.min(Math.ceil(c / 1000000) * 5000, 10000000) }, no_share_capital: { inc: 20, moa: 5000, aoa: (c) => Math.min(Math.ceil(c / 1000000) * 5000, 10000000) }, section8: { inc: 20, moa: 0, aoa: 0 } },
+                'Tamil Nadu': { share_capital: { inc: 20, moa: 200, aoa: (c) => Math.min(Math.ceil(c / 1000000) * 500, 500000) }, no_share_capital: { inc: 20, moa: 200, aoa: (c) => Math.min(Math.ceil(c / 1000000) * 500, 500000) }, section8: { inc: 20, moa: 0, aoa: 0 } },
+                'Chhattisgarh': { share_capital: { inc: 10, moa: 500, aoa: (c) => Math.min(Math.max(c * 0.0015, 1000), 500000) }, no_share_capital: { inc: 10, moa: 500, aoa: 1000 }, section8: { inc: 10, moa: 0, aoa: 0 } },
+                'Rajasthan': { share_capital: { inc: 10, moa: 500, aoa: (c) => Math.min(Math.max(c * 0.0015, 5000), 2500000) }, no_share_capital: { inc: 10, moa: 500, aoa: 500 }, section8: { inc: 10, moa: 0, aoa: 0 } },
                 'Delhi': { share_capital: { inc: 10, moa: 200, aoa: (c) => pct(c, 0.0015, { max: 2500000 }) }, no_share_capital: { inc: 10, moa: 200, aoa: 200 }, section8: { inc: 10, moa: 0, aoa: 0 } },
                 'Haryana': { share_capital: { inc: 15, moa: 60, aoa: (c) => (c <= 100000 ? 60 : 120) }, no_share_capital: { inc: 15, moa: 60, aoa: 60 }, section8: { inc: 15, moa: 0, aoa: 0 } },
                 'Maharashtra': { share_capital: { inc: 100, moa: 200, aoa: (c) => perStep(c, 500000, 1000, { max: 5000000 }) }, no_share_capital: { inc: 100, moa: 0, aoa: 0 }, section8: { inc: 100, moa: 0, aoa: 0 } },
-                'Orissa': { share_capital: { inc: 10, moa: 300, aoa: 300 }, no_share_capital: { inc: 10, moa: 300, aoa: 300 }, section8: { inc: 10, moa: 300, aoa: 300 } },
-                'Andhra Pradesh': { share_capital: { inc: 20, moa: 500, aoa: (c) => pct(c, 0.0015, { min: 1000, max: 500000 }) }, no_share_capital: { inc: 20, moa: 500, aoa: 1000 }, section8: { inc: 20, moa: 500, aoa: (c) => pct(c, 0.0015, { min: 1000, max: 500000 }) } },
-                'Telangana': { share_capital: { inc: 20, moa: 500, aoa: (c) => pct(c, 0.0015, { min: 1000, max: 500000 }) }, no_share_capital: { inc: 20, moa: 500, aoa: 1000 }, section8: { inc: 20, moa: 500, aoa: (c) => pct(c, 0.0015, { min: 1000, max: 500000 }) } },
-                'Bihar': { share_capital: { inc: 20, moa: 500, aoa: (c) => Math.max(pct(c, 0.0015), 1000) }, no_share_capital: { inc: 20, moa: 500, aoa: 1000 }, section8: { inc: 20, moa: 0, aoa: 0 } },
+                'Odisha': { share_capital: { inc: 10, moa: 300, aoa: 300 }, no_share_capital: { inc: 10, moa: 300, aoa: 300 }, section8: { inc: 10, moa: 300, aoa: 300 } },
+                'Andhra Pradesh': { share_capital: { inc: 20, moa: 500, aoa: (c) => pct(c, 0.0015, { min: 1000, max: 500000 }) }, no_share_capital: { inc: 20, moa: 500, aoa: 1000 }, section8: { inc: 20, moa: 0, aoa: 0 } },
+                'Telangana': { share_capital: { inc: 20, moa: 500, aoa: (c) => pct(c, 0.0015, { min: 1000, max: 500000 }) }, no_share_capital: { inc: 20, moa: 500, aoa: 1000 }, section8: { inc: 20, moa: 0, aoa: 0 } },
+                'Bihar': { share_capital: { inc: 20, moa: 500, aoa: (c) => pct(c, 0.0015, { min: 1000, max: 500000 }) }, no_share_capital: { inc: 20, moa: 500, aoa: 1000 }, section8: { inc: 20, moa: 0, aoa: 0 } },
                 'Jharkhand': { share_capital: { inc: 5, moa: 63, aoa: 105 }, no_share_capital: { inc: 5, moa: 63, aoa: 105 }, section8: { inc: 5, moa: 0, aoa: 0 } },
                 'Jammu and Kashmir': { share_capital: { inc: 10, moa: 150, aoa: (c) => (c <= 100000 ? 150 : 300) }, no_share_capital: { inc: 10, moa: 150, aoa: 150 }, section8: { inc: 10, moa: 0, aoa: 0 } },
-                'Tamil Nadu': { share_capital: { inc: 20, moa: 200, aoa: (c) => perStep(c, 1000000, 500) }, no_share_capital: { inc: 20, moa: 200, aoa: 300 }, section8: { inc: 20, moa: 0, aoa: 0 } },
                 'Puducherry': { share_capital: { inc: 10, moa: 200, aoa: 300 }, no_share_capital: { inc: 10, moa: 200, aoa: 300 }, section8: { inc: 10, moa: 0, aoa: 0 } },
                 'Assam': { share_capital: { inc: 15, moa: 200, aoa: 310 }, no_share_capital: { inc: 15, moa: 200, aoa: 310 }, section8: { inc: 15, moa: 200, aoa: 310 } },
                 'Meghalaya': { share_capital: { inc: 10, moa: 100, aoa: 300 }, no_share_capital: { inc: 10, moa: 100, aoa: 300 }, section8: { inc: 10, moa: 100, aoa: 300 } },
@@ -182,11 +203,9 @@
                 'Tripura': { share_capital: { inc: 10, moa: 100, aoa: 150 }, no_share_capital: { inc: 10, moa: 100, aoa: 150 }, section8: { inc: 10, moa: 100, aoa: 150 } },
                 'Arunachal Pradesh': { share_capital: { inc: 10, moa: 200, aoa: 500 }, no_share_capital: { inc: 10, moa: 200, aoa: 500 }, section8: { inc: 10, moa: 200, aoa: 500 } },
                 'Mizoram': { share_capital: { inc: 10, moa: 100, aoa: 150 }, no_share_capital: { inc: 10, moa: 100, aoa: 150 }, section8: { inc: 10, moa: 100, aoa: 150 } },
-                'Kerala': { share_capital: { inc: 25, moa: 1000, aoa: (c) => { if (c <= 1000000) return 2000; if (c <= 2500000) return 5000; return c * 0.005; } }, no_share_capital: { inc: 25, moa: 1000, aoa: 2000 }, section8: { inc: 25, moa: 1000, aoa: (c) => { if (c <= 1000000) return 2000; if (c <= 2500000) return 5000; return c * 0.005; } } },
+                'Kerala': { share_capital: { inc: 25, moa: 1000, aoa: (c) => (c <= 1000000 ? 2000 : c <= 2500000 ? 5000 : Math.round(c * 0.005)) }, no_share_capital: { inc: 25, moa: 1000, aoa: (c) => (c <= 1000000 ? 2000 : c <= 2500000 ? 5000 : Math.round(c * 0.005)) }, section8: { inc: 25, moa: 0, aoa: 0 } },
                 'Lakshadweep': { share_capital: { inc: 25, moa: 500, aoa: 1000 }, no_share_capital: { inc: 25, moa: 500, aoa: 1000 }, section8: { inc: 25, moa: 500, aoa: 1000 } },
-                'Madhya Pradesh': { share_capital: { inc: 50, moa: 2500, aoa: (c) => pct(c, 0.0015, { min: 5000, max: 2500000 }) }, no_share_capital: { inc: 50, moa: 2500, aoa: 5000 }, section8: { inc: 50, moa: 2500, aoa: (c) => pct(c, 0.0015, { min: 5000, max: 2500000 }) } },
-                'Chhattisgarh': { share_capital: { inc: 10, moa: 500, aoa: (c) => Math.max(pct(c, 0.0015), 1000) }, no_share_capital: { inc: 10, moa: 500, aoa: 1000 }, section8: { inc: 10, moa: 0, aoa: 0 } },
-                'Rajasthan': { share_capital: { inc: 10, moa: 500, aoa: (c) => pct(c, 0.005) }, no_share_capital: { inc: 10, moa: 500, aoa: 500 }, section8: { inc: 10, moa: 500, aoa: (c) => pct(c, 0.005) } },
+                'Madhya Pradesh': { share_capital: { inc: 50, moa: 2500, aoa: (c) => pct(c, 0.0015, { min: 5000, max: 2500000 }) }, no_share_capital: { inc: 50, moa: 2500, aoa: 5000 }, section8: { inc: 50, moa: 2500, aoa: 0 } },
                 'Punjab': { share_capital: { inc: 25, moa: 5000, aoa: (c) => (c <= 100000 ? 5000 : 10000) }, no_share_capital: { inc: 25, moa: 5000, aoa: 5000 }, section8: { inc: 25, moa: 0, aoa: 0 } },
                 'Himachal Pradesh': { share_capital: { inc: 3, moa: 60, aoa: (c) => (c <= 100000 ? 60 : 120) }, no_share_capital: { inc: 3, moa: 60, aoa: 60 }, section8: { inc: 3, moa: 0, aoa: 0 } },
                 'Chandigarh': { share_capital: { inc: 3, moa: 500, aoa: 1000 }, no_share_capital: { inc: 3, moa: 500, aoa: 1000 }, section8: { inc: 3, moa: 0, aoa: 0 } },
@@ -197,39 +216,9 @@
                 'Dadra and Nagar Haveli': { share_capital: { inc: 1, moa: 15, aoa: 25 }, no_share_capital: { inc: 1, moa: 15, aoa: 25 }, section8: { inc: 1, moa: 0, aoa: 0 } },
                 'Goa': { share_capital: { inc: 50, moa: 150, aoa: (c) => perStep(c, 500000, 1000) }, no_share_capital: { inc: 50, moa: 150, aoa: 1000 }, section8: { inc: 50, moa: 0, aoa: 0 } },
                 'Daman and Diu': { share_capital: { inc: 20, moa: 150, aoa: (c) => perStep(c, 500000, 1000) }, no_share_capital: { inc: 20, moa: 150, aoa: 1000 }, section8: { inc: 20, moa: 0, aoa: 0 } },
-                'Andaman and Nicobar': { share_capital: { inc: 20, moa: 200, aoa: 300 }, no_share_capital: { inc: 20, moa: 200, aoa: 300 }, section8: { inc: 20, moa: 0, aoa: 0 } }
+                'Andaman and Nicobar': { share_capital: { inc: 20, moa: 200, aoa: 300 }, no_share_capital: { inc: 20, moa: 200, aoa: 300 }, section8: { inc: 20, moa: 0, aoa: 0 } },
             };
 
-            // --- HELPER FUNCTIONS ---
-            const formatCurrency = (amount) => new Intl.NumberFormat('en-IN', {
-                style: 'currency', currency: 'INR', minimumFractionDigits: 0, maximumFractionDigits: 0
-            }).format(Math.round(amount || 0));
-
-            const pct = (capital, rate, { min = 0, max = Infinity } = {}) => Math.max(min, Math.min(capital * rate, max));
-            const perStep = (capital, step, perAmt, { max = Infinity } = {}) => Math.min(Math.ceil(capital / step) * perAmt, max);
-            
-            // --- GOVERNMENT FEE CALCULATION FUNCTIONS ---
-            function computeNormalFee(capital) { return capital > 1500000 ? 500 : 0; }
-            function ceilPer10k(amount) { return Math.ceil(amount / 10000); }
-            function computeMoAFee(capital) {
-                if (capital <= 1500000) return 0;
-                const feeAt2_5Cr = 206000 + ceilPer10k(25000000 - 10000000) * 75;
-                if (capital <= 5000000) return Math.min(51000 + ceilPer10k(capital - 1500000) * 300, feeAt2_5Cr);
-                if (capital <= 10000000) return Math.min(156000 + ceilPer10k(capital - 5000000) * 100, feeAt2_5Cr);
-                return Math.min(206000 + ceilPer10k(capital - 10000000) * 75, feeAt2_5Cr);
-            }
-            function computeAoAFee(capital) {
-                if (capital <= 1500000) return 0;
-                if (capital <= 2499999) return 400;
-                if (capital <= 9999999) return 500;
-                return 600;
-            }
-            function computeLLPGovtFee(capital) {
-                if (capital <= 100000) return 500;
-                if (capital <= 500000) return 2000;
-                if (capital <= 1000000) return 4000;
-                return 5000;
-            }
 
             // --- DOM ELEMENT REFERENCES ---
             const stateSelect = document.getElementById('state-select');
@@ -248,16 +237,21 @@
                 option.textContent = state;
                 stateSelect.appendChild(option);
             });
-            stateSelect.value = 'Karnataka';
+            stateSelect.value = 'Gujarat';
 
-            const capitalOptions = Array.from({ length: 100 }, (_, i) => (i + 1) * 100000);
+            const capitalOptions = [];
+            for (let v = 10000; v <= 100000; v += 10000) capitalOptions.push(v);
+            for (let v = 200000; v <= 1000000; v += 100000) capitalOptions.push(v);
+            for (let v = 1500000; v <= 10000000; v += 500000) capitalOptions.push(v);
+            if (!capitalOptions.includes(10000000)) capitalOptions.push(10000000);
+
             capitalOptions.forEach(v => {
                 const option = document.createElement('option');
                 option.value = v;
-                option.textContent = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(v);
+                option.textContent = new Intl.NumberFormat('en-IN').format(v);
                 capitalSelect.appendChild(option);
             });
-            capitalSelect.value = 1000000;
+            capitalSelect.value = 5000000;
 
 
             // --- MAIN CALCULATION FUNCTION ---
@@ -267,23 +261,23 @@
                 const authorizedCapital = Number(capitalSelect.value) || 0;
                 const numDirectors = Number(directorsInput.value) || 0;
 
-                if (!selectedState || authorizedCapital < 0) {
-                    alert('Please select a state and enter a valid authorized capital.');
+                if (!selectedState) {
+                    alert('Please select a state.');
                     return;
                 }
                 
                 let results;
 
                 if (companyType === 'llp') {
-                    const normalFee = computeLLPGovtFee(authorizedCapital);
-                    const govtFeesForIncorp = normalFee + ADDITIONAL_FEE;
+                    const normalFee = (authorizedCapital <= 100000) ? 500 : (authorizedCapital <= 500000) ? 2000 : (authorizedCapital <= 1000000) ? 4000 : 5000;
                     const nameReservation = LLP_NAME_APPROVAL_FEE;
                     const ePanTan = GOVT_ETAN_PAN;
-                    const govtStampDutyTotal = 0;
                     const dscFees = Math.max(0, numDirectors) * DSC_PER_DIRECTOR;
                     const professionalFeesTotal = PROFESSIONAL_FEE + dscFees;
                     const gstOnProfessional = Math.round(professionalFeesTotal * 0.18);
-                    const governmentFeesTotal = govtFeesForIncorp + nameReservation + ePanTan + govtStampDutyTotal;
+                    const govtFeesForIncorp = normalFee;
+                    const govtStampDutyTotal = 0;
+                    const governmentFeesTotal = govtFeesForIncorp + nameReservation + ePanTan;
                     const grandTotal = professionalFeesTotal + gstOnProfessional + governmentFeesTotal;
                     results = {
                         incStamp: 0, moaStamp: 0, aoaStamp: 0, moaRegFee: 0, aoaRegFee: 0,
@@ -348,12 +342,12 @@
                 document.getElementById('res-gov-incorp-total').textContent = formatCurrency(results.govtFeesForIncorp);
                 document.getElementById('res-name-reservation').textContent = formatCurrency(results.nameReservation);
                 document.getElementById('res-epan-tan').textContent = formatCurrency(results.ePanTan);
-                document.getElementById('res-aoa-stamp').textContent = formatCurrency(results.aoaStamp);
-                document.getElementById('res-moa-stamp').textContent = formatCurrency(results.moaStamp);
                 document.getElementById('res-inc-stamp').textContent = formatCurrency(results.incStamp);
+                document.getElementById('res-moa-stamp').textContent = formatCurrency(results.moaStamp);
+                document.getElementById('res-aoa-stamp').textContent = formatCurrency(results.aoaStamp);
                 document.getElementById('res-stamp-duty-total').textContent = formatCurrency(results.govtStampDutyTotal);
                 document.getElementById('res-professional-fee').textContent = formatCurrency(results.professional);
-                document.getElementById('res-dsc-label').textContent = `DSC Fees (₹${DSC_PER_DIRECTOR.toLocaleString('en-IN')} × ${results.numDirectors} director/partner${results.numDirectors !== 1 ? 's' : ''})`;
+                document.getElementById('res-dsc-label').textContent = `DSC Fees (${formatCurrency(DSC_PER_DIRECTOR)} × ${results.numDirectors} director/partner${results.numDirectors !== 1 ? 's' : ''})`;
                 document.getElementById('res-dsc-fees').textContent = formatCurrency(results.dscFees);
                 document.getElementById('res-prof-fees-total').textContent = formatCurrency(results.professionalFeesTotal);
                 document.getElementById('res-gst').textContent = formatCurrency(results.gstOnProfessional);
@@ -367,3 +361,4 @@
     </script>
 </body>
 </html>
+
